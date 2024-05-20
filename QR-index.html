@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML form to Google Sheet</title>
+  
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+  
+</head>
+
+<body>
+  <form>
+    <input type="text" name="data" placeholder='Input'><br><br>
+    <input type="hidden" name="uid" id="line-uid" />
+    <input type="submit" id="sub" value="Submit">
+  </form>
+  <h1 id="msg"></h1>
+  
+  
+<!--     <script>
+    document.querySelector("form").addEventListener('submit', e => {
+      e.preventDefault();
+      const subBtn = document.querySelector("#sub");
+      subBtn.value = "กำลังบันทึก..";
+      fetch('https://script.google.com/macros/s/AKfycbwPouTEQgL6wxnC7LOsBpJvrxbbsDgCyhMu4Fshi4BchOchjGLTQsWrYmPvz9BeAvSW9Q/exec', {
+        method: "POST",
+        body: new FormData(e.target)
+      })
+        .then(res => res.text())
+        .then(data => {
+          document.querySelector("#msg").textContent = data;
+          subBtn.value = "Submit";
+          e.target.reset();
+        });
+    });
+  </script>
+   -->
+  
+      <script>
+      $(document).ready(function () {
+        liff.init({ liffId: 'XXXXXXX' }).then(function () {
+          if (!liff.isLoggedIn()) {
+            liff.login();
+          } else {
+            liff.getProfile().then(function (profile) {
+              $('#line-uid').val(profile.userId);
+            }).catch(function (error) {
+              console.error('LIFF getProfile error:', error);
+            });
+          }
+        })
+        
+        $('form').on('submit', function (e) {
+          e.preventDefault();
+          $('#sub').val('Submitting..');
+          $.ajax({
+            url: "https://script.google.com/macros/s/XXXXXXXXX/exec",
+            method: "POST",
+            data: new FormData(this),
+            contentType: false,
+            processData: false,
+            success: function (data) {
+              $('#msg').text(data);
+              $('#sub').val('Submit');
+              $('form')[0].reset();
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+              console.error('Fetch error:', errorThrown);
+              $('#sub').val('Submit');
+            }
+          });
+        });
+      });
+    </script>
+
+</body>
+
+</html>
