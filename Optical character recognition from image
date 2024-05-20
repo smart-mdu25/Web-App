@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optical character recognition from image</title>
+    <style>
+        body{
+            padding: 0px 100px;
+            font-family: sans-serif;
+        }
+        .container{
+            margin-top: 50px;
+        }
+        .upper div{
+            display: inline;
+            margin-left: 100px;
+            white-space: pre;
+        }
+        .bottom{
+            margin-top: 30px;
+            display: flex;
+        }
+        .bottom div{
+            flex: 1;
+            border: 1px solid rgb(118, 118, 118);
+            height: 400px;
+            margin: 10px;
+        }
+        .bottom div img{
+            max-width: calc(100% - 20px);
+            max-height: calc(100% - 20px);
+            margin: 10px;
+        }
+        .bottom div textarea{
+            resize: none;
+            width: calc(100% - 21px);
+            height: calc(100% - 21px);
+            padding: 10px;
+            font-size: 20px;
+            outline: none;
+            border: none;
+        }
+        .bottom div:first-child{
+            margin-left: 0px;
+            -webkit-box-align: center;
+            -webkit-box-pack: center;
+            display: -webkit-box;
+        }
+        .bottom div:last-child{
+            margin-right: 0px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="upper">
+            <input type="file">
+            <button>Start</button>
+            <div class="progress"></div>
+        </div>
+        <div class="bottom">
+            <div>
+                <img src="">
+            </div>
+            <div>
+                <textarea placeholder="text"></textarea>
+            </div>
+        </div>
+    </div>
+<script src="https://unpkg.com/tesseract.js@2.1.1/dist/tesseract.min.js"></script>
+
+
+<script>
+const fileSelector = document.querySelector('input');
+const startButton = document.querySelector('button');
+const img = document.querySelector('img');
+const progressElement = document.querySelector('.progress');
+const textarea = document.querySelector('textarea');
+
+// Show image on upload
+fileSelector.onchange = () => {
+    const file = fileSelector.files[0];
+    const imgUrl = URL.createObjectURL(new Blob([file], { type: 'image/jpeg' }));
+    img.src = imgUrl;
+};
+
+// Start text recognition
+startButton.onclick = () => {
+    textarea.innerHTML = ''; // Clear previous text
+    progressElement.innerHTML = ''; // Clear previous progress
+
+    const worker = Tesseract.createWorker({
+        logger: (m) => {
+            if (m.status === 'recognizing text') {
+                progressElement.innerHTML = `${m.status} ${Math.round(m.progress * 100)}%`;
+            } else {
+                progressElement.innerHTML = m.status;
+            }
+        }
+    });
+
+    (async () => {
+        await worker.load();
+        await worker.loadLanguage('tha'); // Load the Thai language
+        await worker.initialize('tha'); // Initialize with Thai
+        const { data: { text } } = await worker.recognize(fileSelector.files[0]);
+        // Process text to refine spacing
+        const refinedText = refineThaiTextSpacing(text);
+        textarea.value = refinedText; // Use .value instead of .innerHTML for form elements
+        progressElement.innerHTML = 'Done';
+        await worker.terminate(); // Terminate the worker when done
+    })();
+};
+
+// Function to adjust spacing in the OCR output
+function refineThaiTextSpacing(text) {
+    // Remove unnecessary spaces between Thai characters
+    let refinedText = text.replace(/(\p{Script=Thai})\s+(?![,.๐-๙])/gu, "$1");
+
+    return refinedText;
+}
+
+</script>
+</body>
+</html>
