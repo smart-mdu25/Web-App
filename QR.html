@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code to Google Sheet</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+
+    <!-- Sweet Alert -->
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Loading Overlay -->
+    <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai+Looped:wght@200;300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai');
+@import url('https://fonts.googleapis.com/css2?family=Prompt');
+    * {
+      box-sizing: border-box;
+      font-family: 'Noto Sans Thai', sans-serif;
+      font-family: 'Prompt', sans-serif;
+    }
+  
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      background: rgb(252, 233, 233);
+      background: linear-gradient(0deg, rgba(252, 233, 233, 1) 0%, rgba(224, 244, 241, 1) 26%, rgba(255, 255, 255, 1) 71%);
+      -webkit-background-size: cover;
+      -moz-background-size: cover;
+      -o-background-size: cover;
+      flex-direction: column;
+    }
+  
+    .list {
+      background-color: #ffffff;
+      padding: 1.8em 1.2em;
+      box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+      border-radius: 0.6em;
+    }
+
+    </style>
+</head>
+
+<body>
+  <center class="mb-4" >
+<img src="https://lh3.googleusercontent.com/d/1ZMI9FTcErAj1N8vh0viy3rAPnxZ7Zsky" class="mt-4" style="width:200px; height:auto; padding-bottom: 10px; ">  
+<h2>Scan QR Code to Google Sheet</h2>                  
+<h5 class="text-center text-danger">สื่อ และนวัตกรรมครูสิทธิชาติ สิทธิ</h5>   
+</center>
+
+
+
+  <!--- main container-->
+<main class="container" >
+      <div class="container col-md-6 d-flex justify-content-center list">
+        <div>
+          <br/>
+          <center>
+          <img src="https://cdn-icons-png.flaticon.com/512/3126/3126504.png" style="width:150px" class="card-img-top mb-5" alt="...">
+          </center>
+            
+            <div class="card-body text-center">
+                <p class="card-text">Scan the QR code to save your LINE profile and data to a Google Sheet.</p>
+                <button type="button" id="scanQR" class="btn btn-lg btn-primary mb-4">
+                    <i class="fas fa-qrcode"></i> Click to Scan
+                </button>
+              
+            </div>
+        </div>
+    </div>
+      
+  </main>
+
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+<script>
+window.onload = function() {
+    const defaultLiffId = "XXXXXXXXX";
+    initializeLiff(defaultLiffId);
+};
+
+function initializeLiff(defaultLiffId) {
+    liff.init({
+        liffId: defaultLiffId,
+        withLoginOnExternalBrowser: true,
+    }).then(() => {
+        // Initialize after LIFF is successfully initialized
+        document.getElementById('scanQR').addEventListener('click', startScanning);
+    }).catch(err => {
+        console.error('LIFF Initialization failed', err);
+    });
+}
+
+function startScanning() {
+    liff.scanCodeV2().then(result => {
+        handleScanResult(result);
+    }).catch(err => {
+        Swal.fire("Scan Code Failed", "Unable to scan QR Code. Please try again.", "error");
+    });
+}
+
+function handleScanResult(result) {
+    const stringifiedResult = result.value;
+    if (stringifiedResult) {
+        liff.getProfile().then(profile => {
+            const name = profile.displayName;
+            const userId = profile.userId;
+            const picture = profile.pictureUrl;
+            sendToGoogleSheet(stringifiedResult, userId, name, picture);
+        }).catch(err => {
+            console.error("Error getting profile", err);
+            Swal.fire("Error", "Failed to get user profile.", "error");
+        });
+    } else {
+        Swal.fire("No QR Code Found", "Please scan a QR code.", "info");
+    }
+}
+
+function sendToGoogleSheet(value, userId, name, picture) {
+    $.LoadingOverlay("show");
+    $.post('XXXXXXXXX', { 
+        value: value, 
+        userId: userId, 
+        name: name, 
+        picture: picture 
+    })
+    .done(function(response) {
+        $.LoadingOverlay("hide");
+        // Parse the response to check the result
+        var res = JSON.parse(response);
+        if(res.result === "Error") {
+            // Handle errors, such as duplicate userId
+            Swal.fire('Warning', res.message, 'warning');
+        } else {
+            // Handle success
+            Swal.fire({
+                position: "top-end",
+                icon: "success",
+                title: "ลงเวลาเรียบร้อย",
+                showConfirmButton: false,
+                timer: 1500
+            });
+        }
+    })
+    .fail(function(error) {
+        $.LoadingOverlay("hide");
+        Swal.fire('Error', 'Failed to save your information. Please try again.', 'error');
+    });
+}
+
+</script>
+
+</body>
+
+</html>
